@@ -85,6 +85,8 @@ class GitNotebookManager(FileContentsManager):
         git.commit(self._repo, "IPython notebook save\n\n"
                    "Automated commit from IPython via ipylogue",
                    committer=self.committer_fullname)
+        # I want to push on aws
+        git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
         return model
 
     def update(self, model, path):
