@@ -76,7 +76,8 @@ class GitNotebookManager(FileContentsManager):
             model['path'])
         local_path = os_path[len(self.notebook_dir):].strip('/')
 
-        git.add(self._repo, [str(local_path)])  # path must not be unicode. :(
+        if local_path.endswith(".ipynb") or local_path.endswith(".py"):
+            git.add(self._repo, [str(local_path)])  # path must not be unicode. :(
 
         if self.save_script:
             git.add(self._repo, [str(os.path.splitext(local_path)[0] + '.py')])
@@ -94,7 +95,12 @@ class GitNotebookManager(FileContentsManager):
         return super(GitNotebookManager, self).update(model, path)
 
     def delete(self, path):
-        #TODO
+        git.rm(self._repo, [path])
+        self.log.debug("Notebook {0} deleted".format(path))
+        git.commit(self._repo, "IPython notebook delete\n\n"
+                   "Automated commit from IPython via ipylogue",
+                   committer=self.committer_fullname)
+        git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
         return super(GitNotebookManager, self).delete(path)
 
     def rename_file(self, old_path, new_path):
