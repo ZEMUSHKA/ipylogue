@@ -95,7 +95,7 @@ class GitNotebookManager(FileContentsManager):
         return super(GitNotebookManager, self).update(model, path)
 
     def delete(self, path):
-        git.rm(self._repo, [path])
+        git.rm(self._repo, [str(path)[1:]])
         self.log.debug("Notebook {0} deleted".format(path))
         git.commit(self._repo, "IPython notebook delete\n\n"
                    "Automated commit from IPython via ipylogue",
