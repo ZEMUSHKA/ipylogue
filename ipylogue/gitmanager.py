@@ -101,7 +101,7 @@ class GitNotebookManager(FileContentsManager):
         isFolder = os.path.splitext(path)[-1] == ""
         if any(path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             if isFolder:
-                subprocess.check_output(["git", "rm", "-r", str(path)[1:]], shell=False)
+                subprocess.call(["git", "rm", "-r", str(path)[1:]], shell=False)
                 self._repo = None
                 self._check_repo()
             else:
@@ -125,7 +125,7 @@ class GitNotebookManager(FileContentsManager):
         isFolder = os.path.splitext(old_path)[-1] == ""
         if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             if isFolder:
-                subprocess.check_output(["git", "rm", "-r", str(old_path)], shell=False)
+                subprocess.call(["git", "rm", "-r", str(old_path)], shell=False)
                 self._repo = None
                 self._check_repo()
             else:
