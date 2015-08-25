@@ -126,11 +126,12 @@ class GitNotebookManager(FileContentsManager):
         if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             if isFolder:
                 subprocess.call(["git", "rm", "-r", str(old_path)], shell=False)
+                subprocess.call(["git", "add", str(old_path)], shell=False)
                 self._repo = None
                 self._check_repo()
             else:
                 git.rm(self._repo, [str(_) for _ in old_files])
-            git.add(self._repo, [str(_) for _ in new_files])
+                git.add(self._repo, [str(_) for _ in new_files])
 
             self.log.debug("Notebook renamed from '%s' to '%s'" % (old_files[0],
                                                                    new_files[0]))
