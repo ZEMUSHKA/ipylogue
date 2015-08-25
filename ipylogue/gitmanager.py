@@ -96,7 +96,8 @@ class GitNotebookManager(FileContentsManager):
         return super(GitNotebookManager, self).update(model, path)
 
     def delete(self, path):
-        if any(path.endswith(ext) for ext in self._tracked_ext):
+        isFolder = os.path.splitext(path)[-1] == ""
+        if any(path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             git.rm(self._repo, [str(path)[1:]])
             self.log.debug("Notebook {0} deleted".format(path))
             git.commit(self._repo, "IPython notebook delete\n\n"
@@ -109,16 +110,17 @@ class GitNotebookManager(FileContentsManager):
         # paths must not be unicode. :(
         old_files = [old_path]
         new_files = [new_path]
-        if self.save_script:
+        if self.save_script and ".ipynb" in old_path:
             old_files.append(old_files[0].replace('.ipynb', '.py'))
             new_files.append(new_files[0].replace('.ipynb', '.py'))
 
-        if any(old_path.endswith(ext) for ext in self._tracked_ext):
+        isFolder = os.path.splitext(old_path)[-1] == ""
+        if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             git.rm(self._repo, [str(_) for _ in old_files])
 
         renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
 
-        if any(old_path.endswith(ext) for ext in self._tracked_ext):
+        if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             git.add(self._repo, [str(_) for _ in new_files])
 
             self.log.debug("Notebook renamed from '%s' to '%s'" % (old_files[0],
