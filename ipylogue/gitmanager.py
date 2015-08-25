@@ -99,7 +99,12 @@ class GitNotebookManager(FileContentsManager):
     def delete(self, path):
         isFolder = os.path.splitext(path)[-1] == ""
         if any(path.endswith(ext) for ext in self._tracked_ext) or isFolder:
-            git.rm(self._repo, [str(path)[1:]])
+            if isFolder:
+                subprocess.check_output(["git", "rm", "-r", path], shell=False)
+                self._repo = None
+                self._check_repo()
+            else:
+                git.rm(self._repo, [str(path)[1:]])
             self.log.debug("Notebook {0} deleted".format(path))
             git.commit(self._repo, "IPython notebook delete\n\n"
                        "Automated commit from IPython via ipylogue",
@@ -116,10 +121,13 @@ class GitNotebookManager(FileContentsManager):
             new_files.append(new_files[0].replace('.ipynb', '.py'))
 
         isFolder = os.path.splitext(old_path)[-1] == ""
-        if any(old_path.endswith(ext) for ext in self._tracked_ext):
-            git.rm(self._repo, [str(_) for _ in old_files])
-        if isFolder:
-            git.rm(self._repo, [str(_) + "/*" for _ in old_files])
+        if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
+            if isFolder:
+                subprocess.check_output(["git", "rm", "-r", old_path], shell=False)
+                self._repo = None
+                self._check_repo()
+            else:
+                git.rm(self._repo, [str(_) for _ in old_files])
 
         renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
 
