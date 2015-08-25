@@ -25,6 +25,7 @@ from IPython.utils.traitlets import Unicode
 from IPython.html.services.contents.filemanager import FileContentsManager
 
 import os
+import subprocess
 
 #TODO Make checkpoints like here: https://github.com/rgbkrk/bookstore/blob/master/bookstore/swift.py
 
@@ -115,8 +116,10 @@ class GitNotebookManager(FileContentsManager):
             new_files.append(new_files[0].replace('.ipynb', '.py'))
 
         isFolder = os.path.splitext(old_path)[-1] == ""
-        if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
+        if any(old_path.endswith(ext) for ext in self._tracked_ext):
             git.rm(self._repo, [str(_) for _ in old_files])
+        if isFolder:
+            git.rm(self._repo, [str(_) + "/*" for _ in old_files])
 
         renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
 
