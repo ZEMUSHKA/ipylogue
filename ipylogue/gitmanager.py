@@ -97,6 +97,7 @@ class GitNotebookManager(FileContentsManager):
         return super(GitNotebookManager, self).update(model, path)
 
     def delete(self, path):
+        super(GitNotebookManager, self).delete(path)
         isFolder = os.path.splitext(path)[-1] == ""
         if any(path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             if isFolder:
@@ -110,7 +111,6 @@ class GitNotebookManager(FileContentsManager):
                        "Automated commit from IPython via ipylogue",
                        committer=self.committer_fullname)
             # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
-        return super(GitNotebookManager, self).delete(path)
 
     def rename_file(self, old_path, new_path):
         # paths must not be unicode. :(
@@ -120,6 +120,8 @@ class GitNotebookManager(FileContentsManager):
             old_files.append(old_files[0].replace('.ipynb', '.py'))
             new_files.append(new_files[0].replace('.ipynb', '.py'))
 
+        renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
+
         isFolder = os.path.splitext(old_path)[-1] == ""
         if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             if isFolder:
@@ -128,10 +130,6 @@ class GitNotebookManager(FileContentsManager):
                 self._check_repo()
             else:
                 git.rm(self._repo, [str(_) for _ in old_files])
-
-        renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
-
-        if any(old_path.endswith(ext) for ext in self._tracked_ext) or isFolder:
             git.add(self._repo, [str(_) for _ in new_files])
 
             self.log.debug("Notebook renamed from '%s' to '%s'" % (old_files[0],
