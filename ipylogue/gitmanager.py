@@ -47,6 +47,8 @@ class GitNotebookManager(FileContentsManager):
 
     _repo = None
 
+    _tracked_ext = (".py", ".ipynb", ".txt")
+
     def __init__(self, **kwargs):
         super(GitNotebookManager, self).__init__(**kwargs)
         self._check_repo()
@@ -76,17 +78,17 @@ class GitNotebookManager(FileContentsManager):
             model['path'])
         local_path = os_path[len(self.notebook_dir):].strip('/')
 
-        if local_path.endswith(".ipynb") or local_path.endswith(".py"):
+        if any(local_path.endswith(ext) for ext in self._tracked_ext):
             git.add(self._repo, [str(local_path)])  # path must not be unicode. :(
 
-        if self.save_script:
-            git.add(self._repo, [str(os.path.splitext(local_path)[0] + '.py')])
+            if self.save_script:
+                git.add(self._repo, [str(os.path.splitext(local_path)[0] + '.py')])
 
-        self.log.debug("Notebook added %s" % local_path)
-        git.commit(self._repo, "IPython notebook save\n\n"
-                   "Automated commit from IPython via ipylogue",
-                   committer=self.committer_fullname)
-        # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
+            self.log.debug("Notebook added %s" % local_path)
+            git.commit(self._repo, "IPython notebook save\n\n"
+                       "Automated commit from IPython via ipylogue",
+                       committer=self.committer_fullname)
+            # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
         return model
 
     def update(self, model, path):
@@ -94,12 +96,13 @@ class GitNotebookManager(FileContentsManager):
         return super(GitNotebookManager, self).update(model, path)
 
     def delete(self, path):
-        git.rm(self._repo, [str(path)[1:]])
-        self.log.debug("Notebook {0} deleted".format(path))
-        git.commit(self._repo, "IPython notebook delete\n\n"
-                   "Automated commit from IPython via ipylogue",
-                   committer=self.committer_fullname)
-        # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
+        if any(path.endswith(ext) for ext in self._tracked_ext):
+            git.rm(self._repo, [str(path)[1:]])
+            self.log.debug("Notebook {0} deleted".format(path))
+            git.commit(self._repo, "IPython notebook delete\n\n"
+                       "Automated commit from IPython via ipylogue",
+                       committer=self.committer_fullname)
+            # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
         return super(GitNotebookManager, self).delete(path)
 
     def rename_file(self, old_path, new_path):
@@ -110,19 +113,18 @@ class GitNotebookManager(FileContentsManager):
             old_files.append(old_files[0].replace('.ipynb', '.py'))
             new_files.append(new_files[0].replace('.ipynb', '.py'))
 
-        git.rm(self._repo, [str(_) for _ in old_files])
+        if any(old_path.endswith(ext) for ext in self._tracked_ext):
+            git.rm(self._repo, [str(_) for _ in old_files])
 
         renamed = super(GitNotebookManager, self).rename_file(old_path, new_path)
 
-        git.add(self._repo, [str(_) for _ in new_files])
+        if any(old_path.endswith(ext) for ext in self._tracked_ext):
+            git.add(self._repo, [str(_) for _ in new_files])
 
-        self.log.debug("Notebook renamed from '%s' to '%s'" % (old_files[0],
-                                                               new_files[0]))
-        git.commit(self._repo, "IPython notebook rename\n\n"
-                   "Automated commit from IPython via ipylogue",
-                   committer=self.committer_fullname)
-        # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
+            self.log.debug("Notebook renamed from '%s' to '%s'" % (old_files[0],
+                                                                   new_files[0]))
+            git.commit(self._repo, "IPython notebook rename\n\n"
+                       "Automated commit from IPython via ipylogue",
+                       committer=self.committer_fullname)
+            # git.push(self._repo, self._repo.get_config()[('remote', 'origin')]["url"], "refs/heads/master")
         return renamed
-
-    #def info_string(self):
-    #    return "Serving notebooks from local git repository: %s" % self.notebook_dir
